@@ -6,7 +6,7 @@ import type { M3MenuItemConfig } from '../data/menu';
 import { mediumHeadline } from '../style/type.style';
 import { buttonStyles } from '../style/widgets.style';
 
-type TopAppBarVariants = 'center' | 'small' | 'medium' | 'large';
+export type M3TopBarVariant = 'center' | 'small' | 'medium' | 'large';
 
 //import { auth } from '../data/auth';
 const auth = undefined as any;
@@ -18,7 +18,7 @@ interface ScrollInfo {
 
 @customElement('m3-top-bar')
 export class M3TopBar extends LitElement {
-  @property({ type: String, attribute: true }) variant: TopAppBarVariants = 'center';
+  @property({ type: String, attribute: true }) variant: M3TopBarVariant = 'center';
   @property({ type: String, attribute: true }) title: string = '';
   @property({ type: String, attribute: true }) back?: string;
   @property({ type: Boolean, reflect: true }) fixed: boolean = false;

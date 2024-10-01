@@ -1,11 +1,15 @@
-import { type ReactiveController, type ReactiveControllerHost } from 'lit';
+import { html, type ReactiveController, type ReactiveControllerHost } from 'lit';
 import { matchUrlPattern, type URLParams } from '../data/routing';
+import { unsafeStatic } from 'lit/static-html.js';
+
+
+export type RoutePatternValue = string | URLPatternInit | URLPattern;
 
 export interface Route {
   name?: string;
-  pattern: string | URLPatternInit | URLPattern;
+  pattern: RoutePatternValue | RoutePatternValue[];
   render: (params: URLParams) => any;
-  load?: (params: URLParams) => Promise<() => void>;
+  load?: (params: URLParams) => (Promise<() => void> | void);
 }
 
 export interface RouteMatch {
@@ -77,7 +81,6 @@ export class Router implements ReactiveController {
     this._active = route;
     this._params = params;
     this._load();
-    this._host.requestUpdate();
   }
 
   render() {
@@ -91,40 +94,50 @@ export class Router implements ReactiveController {
     if (!routes) return;
     url = new URL(url, window.location.origin);
     for (let route of routes) {
-      let params = matchUrlPattern(url, route.pattern);
-      if (params) {
-        return { route, params };
+      for (let pattern of chain(route.pattern)) {
+        let params = matchUrlPattern(url, pattern);
+        console.log('try', url.href, pattern, params);
+        if (params) {
+          return { route, params };
+        }
       }
     }
   }
 
-  _load() {
-    let nonce = ++this._loadCounter;
+  _completeLoading(error?: Error) {
+    this._loading = false;
+    this._error = error;
+    this._host.requestUpdate();
+  }
 
+  _load() {
     if (this._unload) this._unload();
     this._unload = undefined;
 
-    if (this._active?.load) {
-      this._loading = true;
-      this._active
-        .load(this._params!)
-        .then(unload => {
-          if (nonce !== this._loadCounter) return;
-          this._unload = unload || undefined;
-          this._loading = false;
-          this._error = undefined;
-        }).catch(e => {
-          if (nonce !== this._loadCounter) return;
-          this._loading = false;
-          this._error = e;
-          console.error(e);
-        }).finally(() => {
-          this._host.requestUpdate();
-        });
-    } else {
-      this._loading = false;
-      this._error = undefined;
+    let loadFn = this._active?.load;
+
+    if (!loadFn) {
+      return this._completeLoading();
     }
+
+    let result = loadFn(this._params!);
+
+    if (!result || typeof result.then !== 'function') {
+      return this._completeLoading();
+    }
+
+    let nonce = ++this._loadCounter;
+
+    this._loading = true;
+    result.then((unload: any) => {
+      if (nonce !== this._loadCounter) return;
+      this._unload = unload || undefined;
+      this._completeLoading();
+    }).catch(e => {
+      console.error(e);
+      if (nonce !== this._loadCounter) return;
+      this._completeLoading(e);
+    });
   }
 }
 
@@ -233,3 +246,8 @@ function makeURL(url: string | URL, baseURL?: string): URL {
   if (url instanceof URL) return url;
   return new URL(url, baseURL || window.location.origin);
 };
+
+function chain(value: any) {
+  if (Array.isArray(value)) return value;
+  return [value];
+}

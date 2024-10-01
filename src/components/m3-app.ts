@@ -1,10 +1,6 @@
 import { LitElement, html, css, render } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
-import { queryNavItems, type M3MenuItemConfig } from '../data/menu';
-import type { M3PageConfig } from './m3-page';
-import { LocationController } from '../controllers/location-controller';
-import { matchUrlPattern, type URLParams } from '../data/routing';
-import type { M3Nav } from './m3-nav';
+import { customElement, property } from 'lit/decorators.js';
+import { type M3MenuItemConfig } from '../data/menu';
 import { WindowRouter, type Route } from '../controllers/m3-router';
 
 
@@ -46,7 +42,6 @@ export class M3App extends LitElement {
       gap: var(--m3-gap);
       flex-grow: 1;
       flex-wrap: wrap;
-      padding-top: 2px;
     }
   `;
 
@@ -72,20 +67,31 @@ export class M3App extends LitElement {
 
   load(url: string | URL) {
     this.router.navigate(url);
+    this.updateMenu();
   }
 
   replace(url: string | URL) {
     this.router.replace(url);
+    this.updateMenu();
   }
 
   reload() {
     this.router.reload();
+    this.updateMenu();
   }
 
   updated() {
     if (this.router.activeRoute) {
       render(this.router.render(), this);
     }
+  }
+
+  updateMenu(menu?: M3MenuItemConfig[]) {
+    this.menu = menu || this.menu;
+    if (this.menu) {
+      this.menu = [...this.menu];
+    }
+    this.requestUpdate('menu');
   }
 
   render() {

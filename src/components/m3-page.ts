@@ -1,13 +1,10 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { M3MenuItemConfig } from '../data/menu';
-import type { M3MediaBreakpoint } from '../data/breakpoints';
 import type { M3NavVariant } from './m3-nav';
-import type { Route, RouterParams } from '../controllers/m3-router';
 import type { URLParams } from '../data/routing';
+import type { Route } from '../controllers/m3-router';
 
-export type M3PageUnloader = () => void;
-export type M3PageLoader = () => Promise<M3PageUnloader | void>;
 export type M3PageRender = (params: URLParams, page: M3PageConfig) => any;
 
 export interface M3PageAlternate {
@@ -26,7 +23,7 @@ export interface M3PageImage {
   height?: number;
 }
 
-export interface M3PageSettings {
+export interface M3PageConfig {
   title?: string;
   description?: string;
   image?: string | M3PageImage;
@@ -48,24 +45,59 @@ export interface M3PageSettings {
   navVariant?: M3NavVariant;
 }
 
-export interface M3PageConfig extends M3PageSettings {
-  name: string;
-  route: string | URLPatternInit | URLPattern;
-  render: M3PageRender;
-  load?: M3PageLoader;
-  settings?: M3PageSettings;
-  params?: URLParams
+export interface M3PageElement {
+  params?: URLParams;
+  meta?: M3PageConfig;
 }
 
 
 @customElement('m3-page')
-export class M3Page extends LitElement {
+export class M3Page extends LitElement implements M3PageElement {
+  _unload?: CallableFunction | CallableFunction[];
+
+  @property({ type: Object })
+  params?: URLParams;
+
+  @property({ type: Object })
+  meta?: M3PageConfig;
+
   createRenderRoot() {
     return this;
   }
 
-  render() {
-    return html``;
+  load(): CallableFunction | CallableFunction[] | void {
+
+  }
+
+  unload(): void {
+    if (Array.isArray(this._unload)) {
+      this._unload.forEach((fn) => fn());
+    } else if (this._unload) {
+      this._unload();
+    }
+  }
+
+  reload() {
+    this.unload();
+    this._unload = this.load() || undefined;
+  }
+
+  updated(props: Map<string | number | symbol, unknown>): void {
+    super.updated(props);
+    if (props.has('params')) {
+      this.reload();
+    }
+  }
+
+  connectedCallback(): void {
+    this._unload = this.load() || undefined;
+    this.classList.add('m3-page');
+    super.connectedCallback();
+  }
+
+  disconnectedCallback(): void {
+    this.unload();
+    super.disconnectedCallback();
   }
 }
 

@@ -70,6 +70,11 @@ defined in the platform.
 - Progressive Web App
 - A11y
 - Support NOSCRIPT Fallback
+- Layers
+  - Descriptive JSON
+  - Semantic Components
+  - Design System Components + Styling
+  - HTML + Web Components
 
 ### Meaning
 

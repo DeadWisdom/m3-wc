@@ -19,7 +19,7 @@ export const MaterialIcons: IconLibrary = {
   name: 'Material Icons',
   resolver: name => {
     const match = name.match(/^(.*?)(_(round|sharp))?$/)!;
-    return `https://cdn.jsdelivr.net/npm/@material-icons/svg@1.0.5/svg/${match[1]}/${match[3] || 'outline'}.svg`;
+    return `https://cdn.jsdelivr.net/npm/@material-icons/svg@1.0.33/svg/${match[1]}/${match[3] || 'outline'}.svg`;
   },
   mutator: svg => svg.setAttribute('fill', 'currentColor')
 }

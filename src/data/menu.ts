@@ -18,6 +18,7 @@ export interface M3MenuItemConfig {
   variant?: M3MenuItemVariant;
   children?: M3MenuItemConfig[];
   priority?: M3MenuItemPriority;
+  hidden?: boolean | (() => boolean);
 }
 
 export interface Prioritized {
@@ -89,6 +90,9 @@ export function organizeMenuItems(items: M3MenuItemConfig[], normal?: M3MenuOrga
   // Can never require more than normal priority
   max.high = Math.min(max.normal, max.high);
 
+  // Filter out items that are not visible
+  items = items.filter(isVisible);
+
   // Ensure the right number of normal items
   let results: (M3MenuItemConfig & Prioritized)[] = items.map(item => {
     if (counts.normal > max.normal) {
@@ -120,6 +124,11 @@ export function organizeMenuItems(items: M3MenuItemConfig[], normal?: M3MenuOrga
   });
 
   return results;
+}
+
+function isVisible(item: M3MenuItemConfig): boolean {
+  if (typeof item.hidden === 'function') return !item.hidden();
+  return item.hidden !== true;
 }
 
 /// Nav Query ///
