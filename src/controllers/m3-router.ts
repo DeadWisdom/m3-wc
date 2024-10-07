@@ -1,7 +1,10 @@
-import { html, type ReactiveController, type ReactiveControllerHost } from 'lit';
-import { matchUrlPattern, type URLParams } from '../data/routing';
-import { unsafeStatic } from 'lit/static-html.js';
-
+import {
+  html,
+  type ReactiveController,
+  type ReactiveControllerHost,
+} from "lit";
+import { matchUrlPattern, type URLParams } from "../data/routing";
+import { unsafeStatic } from "lit/static-html.js";
 
 export type RoutePatternValue = string | URLPatternInit | URLPattern;
 
@@ -9,7 +12,7 @@ export interface Route {
   name?: string;
   pattern: RoutePatternValue | RoutePatternValue[];
   render: (params: URLParams) => any;
-  load?: (params: URLParams) => (Promise<() => void> | void);
+  load?: (params: URLParams) => Promise<() => void> | void;
 }
 
 export interface RouteMatch {
@@ -49,7 +52,7 @@ export class Router implements ReactiveController {
   }
 
   get routes(): Route[] | undefined {
-    if (typeof this._routes === 'function') {
+    if (typeof this._routes === "function") {
       return this._routes();
     }
     return this._routes;
@@ -61,14 +64,14 @@ export class Router implements ReactiveController {
 
   constructor(
     host: ReactiveControllerHost & HTMLElement,
-    routes?: RouteConfig,
+    routes?: RouteConfig
   ) {
     (this._host = host).addController(this);
     this._routes = routes || [];
   }
 
-  hostConnected(): void { }
-  hostDisconnected(): void { }
+  hostConnected(): void {}
+  hostDisconnected(): void {}
 
   activateURL(url: string | URL) {
     let match = this.findRoute(url);
@@ -96,7 +99,6 @@ export class Router implements ReactiveController {
     for (let route of routes) {
       for (let pattern of chain(route.pattern)) {
         let params = matchUrlPattern(url, pattern);
-        console.log('try', url.href, pattern, params);
         if (params) {
           return { route, params };
         }
@@ -122,22 +124,24 @@ export class Router implements ReactiveController {
 
     let result = loadFn(this._params!);
 
-    if (!result || typeof result.then !== 'function') {
+    if (!result || typeof result.then !== "function") {
       return this._completeLoading();
     }
 
     let nonce = ++this._loadCounter;
 
     this._loading = true;
-    result.then((unload: any) => {
-      if (nonce !== this._loadCounter) return;
-      this._unload = unload || undefined;
-      this._completeLoading();
-    }).catch(e => {
-      console.error(e);
-      if (nonce !== this._loadCounter) return;
-      this._completeLoading(e);
-    });
+    result
+      .then((unload: any) => {
+        if (nonce !== this._loadCounter) return;
+        this._unload = unload || undefined;
+        this._completeLoading();
+      })
+      .catch((e) => {
+        console.error(e);
+        if (nonce !== this._loadCounter) return;
+        this._completeLoading(e);
+      });
   }
 }
 
@@ -174,15 +178,15 @@ export class WindowRouter extends Router {
 
   startListening() {
     if (this._listening) return;
-    window.addEventListener('popstate', this._onPopState);
-    window.addEventListener('click', this._onClick);
+    window.addEventListener("popstate", this._onPopState);
+    window.addEventListener("click", this._onClick);
     this._listening = true;
   }
 
   stopListening() {
     if (!this._listening) return;
-    window.removeEventListener('popstate', this._onPopState);
-    window.removeEventListener('click', this._onClick);
+    window.removeEventListener("popstate", this._onPopState);
+    window.removeEventListener("click", this._onClick);
     this._listening = false;
   }
 
@@ -198,7 +202,7 @@ export class WindowRouter extends Router {
 
   navigate(url: string | URL, state?: any) {
     if (this._update(url)) {
-      window.history.pushState(state, '', this._activeURL.href);
+      window.history.pushState(state, "", this._activeURL.href);
       return true;
     }
     return false;
@@ -206,7 +210,7 @@ export class WindowRouter extends Router {
 
   replace(url: string | URL, state?: any) {
     if (this._update(url)) {
-      window.history.replaceState(state, '', this._activeURL.href);
+      window.history.replaceState(state, "", this._activeURL.href);
       return true;
     }
     return false;
@@ -218,18 +222,21 @@ export class WindowRouter extends Router {
 
   _onPopState = (_e: PopStateEvent) => {
     this._update(window.location.href);
-  }
+  };
 
   _onClick = (e: MouseEvent) => {
-    const isNonNavigationClick = e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey;
+    const isNonNavigationClick =
+      e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey;
     if (e.defaultPrevented || isNonNavigationClick) return;
 
     const composedPath = e.composedPath() as HTMLElement[];
-    const anchor = composedPath.find((el) => el.hasAttribute && el.hasAttribute('href'));
+    const anchor = composedPath.find(
+      (el) => el.hasAttribute && el.hasAttribute("href")
+    );
 
-    if (!anchor || anchor.getAttribute('target')) return;
+    if (!anchor || anchor.getAttribute("target")) return;
 
-    const href = anchor.getAttribute('href');
+    const href = anchor.getAttribute("href");
     if (!href || href === location.href) return;
 
     const url = new URL(href, window.location.href);
@@ -245,7 +252,7 @@ export class WindowRouter extends Router {
 function makeURL(url: string | URL, baseURL?: string): URL {
   if (url instanceof URL) return url;
   return new URL(url, baseURL || window.location.origin);
-};
+}
 
 function chain(value: any) {
   if (Array.isArray(value)) return value;
